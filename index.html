@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>單字練習網站</title>
+<style>
+  body { font-family: Arial; padding: 20px; }
+  .question { margin-bottom: 15px; }
+  input { width: 400px; padding: 5px; margin-top: 5px; }
+  .correct { color: green; }
+  .wrong { color: red; }
+  #results { margin-top: 20px; }
+  button { padding: 5px 10px; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h1>單字練習</h1>
+<div id="quiz"></div>
+<button id="submitBtn">提交答案</button>
+<div id="results"></div>
+
+<!-- 載入 PapaParse -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script>
+let questions = [];
+let wrongWords = [];
+
+// 載入 CSV (words.csv 必須和 HTML 在同一個資料夾)
+Papa.parse('words.csv', {
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  complete: function(results) {
+    questions = results.data;
+    showQuestions();
+  },
+  error: function(err) {
+    console.error("CSV 讀取錯誤:", err);
+  }
+});
+
+// 顯示題目
+function showQuestions() {
+  const quizDiv = document.getElementById('quiz');
+  quizDiv.innerHTML = '';
+  questions.forEach((q, index) => {
+    const div = document.createElement('div');
+    div.className = 'question';
+    div.innerHTML = `
+      <label>${index + 1}. ${q.meaning}</label><br>
+      <input type="text" id="input${index}" placeholder="輸入英文單字">
+      <span id="result${index}"></span>
+    `;
+    quizDiv.appendChild(div);
+  });
+}
+
+// 核對答案
+document.getElementById('submitBtn').addEventListener('click', () => {
+  wrongWords = [];
+  questions.forEach((q, index) => {
+    const userInput = document.getElementById(`input${index}`).value.trim().toLowerCase();
+    const span = document.getElementById(`result${index}`);
+    if(userInput === q.word.toLowerCase()){
+      span.textContent = " 正確";
+      span.className = "correct";
+    } else {
+      span.textContent = ` 錯誤，答案: ${q.word}`;
+      span.className = "wrong";
+      wrongWords.push(q);
+    }
+  });
+
+  const resultsDiv = document.getElementById('results');
+  resultsDiv.innerHTML = `<p>答錯單字數: ${wrongWords.length}</p>`;
+  
+  if(wrongWords.length > 0){
+    resultsDiv.innerHTML += `<button onclick="nextRound()">下一輪只練錯題</button>`;
+  }
+});
+
+// 下一輪練習
+function nextRound() {
+  questions = wrongWords;
+  showQuestions();
+  document.getElementById('results').innerHTML = '';
+}
+</script>
+
+</body>
+</html>
